@@ -374,9 +374,13 @@ async function xhsFetch(endpointName, body, accessToken) {
     const res = await fetch(fullUrl, fetchOpts);
     const data = await res.json();
 
-    // 聚光 API 统一返回格式: { code: 0, msg: "success", data: {...} }
-    if (data.code === 0) {
-      return { ok: true, data: data.data, msg: data.msg };
+    // 聚光 API 返回格式:
+    //   离线报表: { code: 0, data: { data_list: [...] } }
+    //   实时报表: { code: 0, creativity_dtos: [...], total_data: {...}, page: {...} }
+    // 返回完整响应体（去掉 code/msg），保留所有字段
+    if (data.code === 0 || data.success === true) {
+      const { code: _c, msg: _m, success: _s, ...rest } = data;
+      return { ok: true, data: rest.data || null, msg: data.msg, ...rest };
     }
     return { ok: false, data, code: data.code, msg: data.msg };
   } catch (err) {
