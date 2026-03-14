@@ -1,3 +1,2 @@
 # 本地开发用，复制为 .dev.vars 填入真实值
-XHS_APP_KEY=your_app_key
-XHS_APP_SECRET=your_app_secret
+XHS_SECRET=your_secret_here

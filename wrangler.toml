@@ -14,8 +14,8 @@ binding = "DB"
 database_name = "xhs-db"
 database_id = "dcd27753-681e-4be8-8a54-aa0cdbd4facc"
 
-# 环境变量 (敏感信息用 secrets)
-# wrangler secret put XHS_APP_KEY
-# wrangler secret put XHS_APP_SECRET
+# 环境变量
+# XHS_SECRET 用 secrets 存储: wrangler secret put XHS_SECRET
 [vars]
+XHS_APP_ID = "8052"
 FRONTEND_URL = "https://maplesgedu.com"

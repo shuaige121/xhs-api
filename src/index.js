@@ -1,27 +1,31 @@
 /**
- * XHS (小红书) OAuth Worker
+ * XHS 聚光平台 OAuth Worker
  *
  * Routes:
- *   GET  /xhs/callback     — OAuth 回调，换 token 存 D1
- *   GET  /xhs/auth          — 发起授权跳转
+ *   GET  /xhs/auth          — 发起授权跳转到聚光平台
+ *   GET  /xhs/callback      — OAuth 回调，换 token 存 D1
  *   GET  /xhs/token/:userId — 查询已存 token
  *   POST /xhs/refresh       — 刷新 token
  *   GET  /xhs/health        — 健康检查
  */
 
-const XHS_AUTH_URL = 'https://customer.xiaohongshu.com/login/oauth/authorize';
-const XHS_TOKEN_URL = 'https://customer.xiaohongshu.com/api/oauth/token';
+// 聚光平台 OAuth 端点
+const XHS_AUTH_URL = 'https://ad-market.xiaohongshu.com/auth';
+const XHS_TOKEN_URL = 'https://edith.xiaohongshu.com/api/market/oauth/token';
+const XHS_REFRESH_URL = 'https://edith.xiaohongshu.com/api/market/oauth/refresh_token';
+
+// 聚光平台授权范围
+const SCOPES = ['report_service', 'ad_query', 'ad_manage', 'account_manage'];
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // CORS headers
     const corsHeaders = {
       'Access-Control-Allow-Origin': env.FRONTEND_URL || '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
 
     if (request.method === 'OPTIONS') {
@@ -60,18 +64,18 @@ export default {
 };
 
 /**
- * 发起 OAuth 授权 — 跳转到小红书登录页
+ * 发起聚光平台 OAuth 授权
+ * 格式: https://ad-market.xiaohongshu.com/auth?appId=XXX&scope=[...]&redirectUri=...&state=...
  */
 function handleAuth(url, env) {
   const state = crypto.randomUUID();
   const redirectUri = `https://${url.host}/xhs/callback`;
 
   const authUrl = new URL(XHS_AUTH_URL);
-  authUrl.searchParams.set('app_key', env.XHS_APP_KEY);
-  authUrl.searchParams.set('redirect_uri', redirectUri);
-  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('appId', env.XHS_APP_ID);
+  authUrl.searchParams.set('scope', JSON.stringify(SCOPES));
+  authUrl.searchParams.set('redirectUri', redirectUri);
   authUrl.searchParams.set('state', state);
-  // authUrl.searchParams.set('scope', 'user_info'); // 按需添加
 
   return Response.redirect(authUrl.toString(), 302);
 }
@@ -87,31 +91,31 @@ async function handleCallback(url, env, corsHeaders) {
     return json({ error: 'missing code parameter' }, corsHeaders, 400);
   }
 
-  // 用 code 换 access_token
-  const redirectUri = `https://${url.host}/xhs/callback`;
-
+  // 聚光平台 token 接口：用 code + app_id + secret 换 access_token
   const tokenRes = await fetch(XHS_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      app_key: env.XHS_APP_KEY,
-      app_secret: env.XHS_APP_SECRET,
+      app_id: parseInt(env.XHS_APP_ID),
+      secret: env.XHS_SECRET,
       code: code,
-      grant_type: 'authorization_code',
-      redirect_uri: redirectUri,
     }),
   });
 
-  const tokenData = await tokenRes.json();
+  const resp = await tokenRes.json();
 
-  if (tokenData.error || tokenData.error_code) {
-    console.error('Token exchange failed:', JSON.stringify(tokenData));
-    return json({ error: 'token exchange failed', detail: tokenData }, corsHeaders, 400);
+  // 聚光 API 返回格式: { code: 0, msg: "success", data: { access_token, ... } }
+  if (resp.code !== 0 || !resp.data) {
+    console.error('Token exchange failed:', JSON.stringify(resp));
+    return json({ error: 'token exchange failed', detail: resp }, corsHeaders, 400);
   }
 
-  // 存入 D1
-  const userId = tokenData.user_id || tokenData.sub || 'unknown';
-  const expiresAt = Math.floor(Date.now() / 1000) + (tokenData.expires_in || 86400);
+  const tokenData = resp.data;
+
+  // 存入 D1 — 用 advertiser_id 作为 user_id
+  const userId = String(tokenData.advertiser_id || tokenData.user_id || 'unknown');
+  const expiresAt = tokenData.expires_at
+    || Math.floor(Date.now() / 1000) + (tokenData.expires_in || 86400);
 
   await env.DB.prepare(`
     INSERT INTO oauth_tokens (user_id, access_token, refresh_token, token_type, expires_at, scope)
@@ -126,12 +130,12 @@ async function handleCallback(url, env, corsHeaders) {
     userId,
     tokenData.access_token,
     tokenData.refresh_token || null,
-    tokenData.token_type || 'bearer',
+    'bearer',
     expiresAt,
-    tokenData.scope || null,
+    JSON.stringify(SCOPES),
   ).run();
 
-  // 跳转前端，带上 user_id（不暴露 token）
+  // 跳转前端（不暴露 token）
   const frontendUrl = new URL(env.FRONTEND_URL || 'https://maplesgedu.com');
   frontendUrl.pathname = '/xhs/success';
   frontendUrl.searchParams.set('user_id', userId);
@@ -180,24 +184,25 @@ async function handleRefresh(body, env, corsHeaders) {
     return json({ error: 'no refresh token' }, corsHeaders, 404);
   }
 
-  const tokenRes = await fetch(XHS_TOKEN_URL, {
+  const tokenRes = await fetch(XHS_REFRESH_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      app_key: env.XHS_APP_KEY,
-      app_secret: env.XHS_APP_SECRET,
+      app_id: parseInt(env.XHS_APP_ID),
+      secret: env.XHS_SECRET,
       refresh_token: row.refresh_token,
-      grant_type: 'refresh_token',
     }),
   });
 
-  const tokenData = await tokenRes.json();
+  const resp = await tokenRes.json();
 
-  if (tokenData.error || tokenData.error_code) {
-    return json({ error: 'refresh failed', detail: tokenData }, corsHeaders, 400);
+  if (resp.code !== 0 || !resp.data) {
+    return json({ error: 'refresh failed', detail: resp }, corsHeaders, 400);
   }
 
-  const expiresAt = Math.floor(Date.now() / 1000) + (tokenData.expires_in || 86400);
+  const tokenData = resp.data;
+  const expiresAt = tokenData.expires_at
+    || Math.floor(Date.now() / 1000) + (tokenData.expires_in || 86400);
 
   await env.DB.prepare(`
     UPDATE oauth_tokens SET
