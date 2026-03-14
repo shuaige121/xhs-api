@@ -81,24 +81,26 @@ function handleAuth(url, env) {
 }
 
 /**
- * OAuth 回调 — code 换 token，存 D1，跳转前端
+ * OAuth 回调 — auth_code 换 token，存 D1，跳转前端
+ * 聚光平台回调格式: ?auth_code=xxx&state=xxx
  */
 async function handleCallback(url, env, corsHeaders) {
-  const code = url.searchParams.get('code');
+  const authCode = url.searchParams.get('auth_code');
   const state = url.searchParams.get('state');
 
-  if (!code) {
-    return json({ error: 'missing code parameter' }, corsHeaders, 400);
+  if (!authCode) {
+    return json({ error: 'missing auth_code parameter' }, corsHeaders, 400);
   }
 
-  // 聚光平台 token 接口：用 code + app_id + secret 换 access_token
+  // 聚光平台 token 接口：用 auth_code + app_id + secret 换 access_token
+  // auth_code 有效期 10 分钟
   const tokenRes = await fetch(XHS_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       app_id: parseInt(env.XHS_APP_ID),
       secret: env.XHS_SECRET,
-      code: code,
+      auth_code: authCode,
     }),
   });
 
