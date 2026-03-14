@@ -10,99 +10,105 @@
  * - 工具 (关键词/人群/操作记录)
  *
  * 所有 API 通过 Worker 代理，自动管理 token。
+ *
+ * 端点路径已从 xhs-ad-console/platforms/xhs_ad_platform.py 验证。
+ * API Base: https://adapi.xiaohongshu.com
+ * Auth Header: Access-Token
  */
 
 // ============================================================
-// 聚光平台端点配置
+// 聚光平台端点配置（已验证）
 // ============================================================
 const XHS_AUTH_URL = 'https://ad-market.xiaohongshu.com/auth';
-const XHS_API_BASE = 'https://edith.xiaohongshu.com/api/open';
+const XHS_API_BASE = 'https://adapi.xiaohongshu.com';
 const SCOPES = ['report_service', 'ad_query', 'ad_manage', 'account_manage'];
 
-// 完整 API 端点映射（硬编码）
+// 完整 API 端点映射（硬编码，路径已从 xhs_ad_platform.py 验证）
 const ENDPOINTS = {
-  // === OAuth ===
-  'oauth.token':           { method: 'POST', path: '/jg/oauth/token' },
-  'oauth.refresh':         { method: 'POST', path: '/jg/oauth/refresh_token' },
+  // === OAuth（已验证）===
+  'oauth.token':           { method: 'POST', path: '/api/open/oauth2/access_token' },
+  'oauth.refresh':         { method: 'POST', path: '/api/open/oauth2/refresh_token' },
+  'oauth.advertisers':     { method: 'POST', path: '/api/open/oauth2/advertiser/get' },
 
-  // === 投放管理 - 计划 ===
-  'campaign.create':       { method: 'POST', path: '/jg/campaign/create' },
-  'campaign.update':       { method: 'POST', path: '/jg/campaign/update' },
-  'campaign.list':         { method: 'POST', path: '/jg/campaign/list' },
-  'campaign.status':       { method: 'POST', path: '/jg/campaign/status/update' },
+  // === 投放管理 - 计划（已验证）===
+  'campaign.create':       { method: 'POST', path: '/api/open/jg/campaign/create' },
+  'campaign.update':       { method: 'POST', path: '/api/open/jg/campaign/update' },
+  'campaign.list':         { method: 'POST', path: '/api/open/jg/campaign/list' },
+  'campaign.status':       { method: 'POST', path: '/api/open/jg/campaign/status/update' },
 
-  // === 投放管理 - 单元 ===
-  'unit.create':           { method: 'POST', path: '/jg/unit/create' },
-  'unit.update':           { method: 'POST', path: '/jg/unit/update' },
-  'unit.list':             { method: 'POST', path: '/jg/unit/list' },
-  'unit.status':           { method: 'POST', path: '/jg/unit/update/status' },
+  // === 投放管理 - 单元（已验证）===
+  'unit.create':           { method: 'POST', path: '/api/open/jg/unit/create' },
+  'unit.update':           { method: 'POST', path: '/api/open/jg/unit/update' },
+  'unit.list':             { method: 'POST', path: '/api/open/jg/unit/list' },
+  'unit.status':           { method: 'POST', path: '/api/open/jg/unit/status/update' },
 
-  // === 投放管理 - 创意 ===
-  'creative.create':       { method: 'POST', path: '/jg/creativity/create' },
-  'creative.update':       { method: 'POST', path: '/jg/creativity/update' },
-  'creative.search':       { method: 'POST', path: '/jg/creativity/search' },
-  'creative.status':       { method: 'POST', path: '/jg/creativity/status/update' },
+  // === 投放管理 - 创意（已验证）===
+  'creative.create':       { method: 'POST', path: '/api/open/jg/creativity/note/create' },
+  'creative.update':       { method: 'POST', path: '/api/open/jg/creativity/update' },
+  'creative.search':       { method: 'POST', path: '/api/open/jg/creativity/search' },
+  'creative.status':       { method: 'POST', path: '/api/open/jg/creativity/status/update' },
 
   // === 素材管理 ===
-  'note.list':             { method: 'POST', path: '/jg/note/list' },
-  'spu.list':              { method: 'POST', path: '/jg/spu/list' },
-  'target_pack.list':      { method: 'POST', path: '/jg/target_pack/list' },
-  'target_pack.create':    { method: 'POST', path: '/jg/target_pack/create' },
-  'target_pack.update':    { method: 'POST', path: '/jg/target_pack/update' },
-  'target_pack.delete':    { method: 'POST', path: '/jg/target_pack/delete' },
-  'target_pack.bindunit':  { method: 'POST', path: '/jg/target_pack/bindunit' },
-  'negative_word.list':    { method: 'POST', path: '/jg/negative_word/list' },
-  'negative_word.add':     { method: 'POST', path: '/jg/negative_word/add' },
-  'negative_word.delete':  { method: 'POST', path: '/jg/negative_word/delete' },
-  'directlink.list':       { method: 'POST', path: '/jg/directlink/list' },
-  'directlink.create':     { method: 'POST', path: '/jg/directlink/create' },
-  'directlink.delete':     { method: 'POST', path: '/jg/directlink/delete' },
-  'landingpage.list':      { method: 'POST', path: '/jg/landingpage/list' },
+  'note.list':             { method: 'POST', path: '/api/open/jg/note/list' },
+  'spu.list':              { method: 'POST', path: '/api/open/jg/spu/list' },
+  'target_pack.list':      { method: 'POST', path: '/api/open/jg/target_pack/list' },
+  'target_pack.create':    { method: 'POST', path: '/api/open/jg/target_pack/create' },
+  'target_pack.update':    { method: 'POST', path: '/api/open/jg/target_pack/update' },
+  'target_pack.delete':    { method: 'POST', path: '/api/open/jg/target_pack/delete' },
+  'target_pack.bindunit':  { method: 'POST', path: '/api/open/jg/target_pack/bindunit' },
+  'negative_word.list':    { method: 'POST', path: '/api/open/jg/negative_word/list' },
+  'negative_word.add':     { method: 'POST', path: '/api/open/jg/negative_word/add' },
+  'negative_word.delete':  { method: 'POST', path: '/api/open/jg/negative_word/delete' },
+  'directlink.list':       { method: 'POST', path: '/api/open/jg/directlink/list' },
+  'directlink.create':     { method: 'POST', path: '/api/open/jg/directlink/create' },
+  'directlink.delete':     { method: 'POST', path: '/api/open/jg/directlink/delete' },
+  'landingpage.list':      { method: 'POST', path: '/api/open/jg/landing_page/list_landing_page' },
 
-  // === 数据报表 - 离线 ===
-  'report.offline.advertiser': { method: 'POST', path: '/jg/data/report/advertiser' },
-  'report.offline.campaign':   { method: 'POST', path: '/jg/data/report/campaign' },
-  'report.offline.unit':       { method: 'POST', path: '/jg/data/report/unit' },
-  'report.offline.creative':   { method: 'POST', path: '/jg/data/report/creativity' },
-  'report.offline.keyword':    { method: 'POST', path: '/jg/data/report/keyword' },
-  'report.offline.searchterm': { method: 'POST', path: '/jg/data/report/search_term' },
-  'report.offline.note':       { method: 'POST', path: '/jg/data/report/note' },
-  'report.offline.series':     { method: 'POST', path: '/jg/data/report/series' },
-  'report.offline.crowd':      { method: 'POST', path: '/api/idea/group_report' },
+  // === 数据报表 - 离线（已验证）===
+  'report.offline.account':    { method: 'POST', path: '/api/open/jg/data/report/offline/account' },
+  'report.offline.campaign':   { method: 'POST', path: '/api/open/jg/data/report/offline/campaign' },
+  'report.offline.unit':       { method: 'POST', path: '/api/open/jg/data/report/offline/unit' },
+  'report.offline.creative':   { method: 'POST', path: '/api/open/jg/data/report/offline/creative' },
+  'report.offline.keyword':    { method: 'POST', path: '/api/open/jg/data/report/offline/keyword' },
+  'report.offline.searchterm': { method: 'POST', path: '/api/open/jg/data/report/offline/search_term' },
+  'report.offline.note':       { method: 'POST', path: '/api/open/jg/data/report/offline/note' },
+  'report.offline.series':     { method: 'POST', path: '/api/open/jg/data/report/offline/series' },
 
-  // === 数据报表 - 实时 ===
-  'report.realtime.advertiser': { method: 'POST', path: '/jg/data/realtime/advertiser' },
-  'report.realtime.campaign':   { method: 'POST', path: '/jg/data/realtime/campaign' },
-  'report.realtime.unit':       { method: 'POST', path: '/jg/data/realtime/unit' },
-  'report.realtime.creative':   { method: 'POST', path: '/jg/data/realtime/creativity' },
-  'report.realtime.keyword':    { method: 'POST', path: '/jg/data/realtime/keyword' },
-  'report.realtime.targeting':  { method: 'POST', path: '/jg/data/realtime/targeting' },
+  // === 数据报表 - 实时（已验证）===
+  'report.realtime.account':   { method: 'POST', path: '/api/open/jg/data/report/realtime/account' },
+  'report.realtime.campaign':  { method: 'POST', path: '/api/open/jg/data/report/realtime/campaign' },
+  'report.realtime.unit':      { method: 'POST', path: '/api/open/jg/data/report/realtime/unit' },
+  'report.realtime.creative':  { method: 'POST', path: '/api/open/jg/data/report/realtime/creativity' },
+  'report.realtime.keyword':   { method: 'POST', path: '/api/open/jg/data/report/realtime/keyword' },
+  'report.realtime.targeting': { method: 'POST', path: '/api/open/jg/data/report/realtime/targeting' },
 
-  // === 账户服务 ===
-  'account.balance':       { method: 'GET',  path: '/jg/account/balance/info' },
-  'account.budget.update': { method: 'POST', path: '/jg/account/budget/update' },
-  'account.sub.page':      { method: 'POST', path: '/jg/account/sub/page' },
-  'account.flow':          { method: 'POST', path: '/jg/account/flow/list' },
-  'account.campaign_flow': { method: 'POST', path: '/jg/campaign/flow/list' },
-  'account.transfer':      { method: 'POST', path: '/jg/account/transfer' },
-  'account.transfer_result': { method: 'POST', path: '/jg/account/transfer/result' },
-  'account.whitelist':     { method: 'POST', path: '/jg/white/list' },
+  // === 账户服务（已验证）===
+  'account.budget':        { method: 'POST', path: '/api/open/jg/account/budget/info' },
+  'account.budget.update': { method: 'POST', path: '/api/open/jg/account/budget/update' },
+  'account.sub.page':      { method: 'POST', path: '/api/open/jg/account/sub/page' },
+  'account.flow':          { method: 'POST', path: '/api/open/jg/account/flow/list' },
+  'account.campaign_flow': { method: 'POST', path: '/api/open/jg/campaign/flow/list' },
+  'account.transfer':      { method: 'POST', path: '/api/open/jg/account/transfer' },
+  'account.transfer_result': { method: 'POST', path: '/api/open/jg/account/transfer/result' },
+  'account.whitelist':     { method: 'POST', path: '/api/open/jg/white/list' },
+  'account.qual':          { method: 'POST', path: '/api/open/jg/data/qual/info' },
 
-  // === 工具 ===
-  'tool.history':          { method: 'POST', path: '/jg/history/list' },
-  'tool.keyword.recommend': { method: 'POST', path: '/jg/keyword/recommend' },
-  'tool.keyword.industry':  { method: 'POST', path: '/jg/keyword/industry/taxonomy' },
-  'tool.crowd.estimate':    { method: 'POST', path: '/jg/crowd/estimate' },
-  'tool.target.keyword':    { method: 'POST', path: '/jg/target/keyword/match' },
-  'tool.target.recommend':  { method: 'POST', path: '/jg/target/keyword/recommend' },
-  'tool.target.info':       { method: 'POST', path: '/jg/target/available/info' },
-  'tool.name.check':        { method: 'POST', path: '/jg/data/name/check' },
-  'tool.poi.list':          { method: 'POST', path: '/jg/data/poi/list' },
+  // === 工具（已验证）===
+  'tool.history':            { method: 'POST', path: '/api/open/jg/history/list' },
+  'tool.keyword.recommend':  { method: 'POST', path: '/api/open/jg/keyword/common/recommend' },
+  'tool.keyword.bags':       { method: 'POST', path: '/api/open/jg/keyword/word/bag/list' },
+  'tool.keyword.industry':   { method: 'POST', path: '/api/open/jg/keyword/industry/taxonomy' },
+  'tool.crowd.estimate':     { method: 'POST', path: '/api/open/jg/crowd/estimate' },
+  'tool.target.keyword':     { method: 'POST', path: '/api/open/jg/target/keyword/match' },
+  'tool.target.recommend':   { method: 'POST', path: '/api/open/jg/target/keyword/recommend' },
+  'tool.target.info':        { method: 'POST', path: '/api/open/jg/target/available/info' },
+  'tool.name.check':         { method: 'POST', path: '/api/open/jg/data/name/check' },
+  'tool.poi.list':           { method: 'POST', path: '/api/open/jg/data/poi/list' },
 
   // === 转化追踪 ===
-  'conversion.click':      { method: 'POST', path: '/jg/conversion/click/link' },
-  'conversion.leads':      { method: 'POST', path: '/jg/conversion/leads' },
-  'conversion.aurora':     { method: 'POST', path: '/jg/conversion/aurora/leads' },
+  'conversion.click':       { method: 'POST', path: '/api/open/jg/conversion/click/link' },
+  'conversion.leads':       { method: 'POST', path: '/api/open/jg/conversion/leads' },
+  'conversion.aurora':      { method: 'POST', path: '/api/open/jg/conversion/aurora/leads' },
 };
 
 // ============================================================
@@ -130,6 +136,7 @@ export default {
           status: 'ok',
           time: new Date().toISOString(),
           endpoints: Object.keys(ENDPOINTS).length,
+          api_base: XHS_API_BASE,
         }, corsHeaders);
       }
 
@@ -198,11 +205,12 @@ async function handleCallback(url, env, corsHeaders) {
   }
 
   // auth_code 换 token（有效期 10 分钟）
-  const tokenRes = await xhsFetch(env, 'oauth.token', {
+  // 聚光 OAuth2 endpoint: /api/open/oauth2/access_token
+  const tokenRes = await xhsFetch('oauth.token', {
     app_id: parseInt(env.XHS_APP_ID),
     secret: env.XHS_SECRET,
     auth_code: authCode,
-  }, null); // 不需要 access_token
+  }, null);
 
   if (!tokenRes.ok) {
     return json({ error: 'token exchange failed', detail: tokenRes.data }, corsHeaders, 400);
@@ -210,9 +218,7 @@ async function handleCallback(url, env, corsHeaders) {
 
   const tokenData = tokenRes.data;
 
-  // 聚光返回可能包含多个广告主 token（最多 5000 个）
-  // 格式可能是 { access_token, refresh_token, advertiser_ids: [...] }
-  // 或者每个广告主单独的 token
+  // 聚光返回可包含多个广告主 token（最多 5000 个）
   const advertiserId = String(tokenData.advertiser_id || tokenData.user_id || 'default');
   const expiresAt = tokenData.expires_at
     || Math.floor(Date.now() / 1000) + (tokenData.expires_in || 86400);
@@ -224,7 +230,7 @@ async function handleCallback(url, env, corsHeaders) {
     expiresAt,
   });
 
-  // 如果返回了广告主 ID 列表，存储映射关系
+  // 如果返回了广告主 ID 列表，存储映射
   if (tokenData.advertiser_ids && Array.isArray(tokenData.advertiser_ids)) {
     for (const advId of tokenData.advertiser_ids) {
       await upsertToken(env.DB, {
@@ -270,7 +276,7 @@ async function handleRefreshToken(userId, env, corsHeaders) {
     return json({ error: 'no refresh token' }, corsHeaders, 404);
   }
 
-  const tokenRes = await xhsFetch(env, 'oauth.refresh', {
+  const tokenRes = await xhsFetch('oauth.refresh', {
     app_id: parseInt(env.XHS_APP_ID),
     secret: env.XHS_SECRET,
     refresh_token: row.refresh_token,
@@ -319,7 +325,6 @@ async function handleApiProxy(endpointName, request, env, corsHeaders) {
     }, corsHeaders, 400);
   }
 
-  // 从 header 或 body 获取 advertiser_id
   const body = await request.json().catch(() => ({}));
   const advertiserId = request.headers.get('X-Advertiser-Id')
     || body.advertiser_id
@@ -334,8 +339,7 @@ async function handleApiProxy(endpointName, request, env, corsHeaders) {
     }, corsHeaders, 401);
   }
 
-  // 代理请求到聚光 API
-  const result = await xhsFetch(env, endpointName, body, token);
+  const result = await xhsFetch(endpointName, body, token);
 
   return json({
     endpoint: endpointName,
@@ -345,20 +349,18 @@ async function handleApiProxy(endpointName, request, env, corsHeaders) {
 }
 
 // ============================================================
-// XHS API 调用
+// XHS API 调用（已验证 base URL + header）
 // ============================================================
 
-async function xhsFetch(env, endpointName, body, accessToken) {
+async function xhsFetch(endpointName, body, accessToken) {
   const endpoint = ENDPOINTS[endpointName];
   if (!endpoint) return { ok: false, data: { error: 'unknown endpoint' } };
 
-  // 离线人群包报表用不同的 base path
-  const fullPath = endpoint.path.startsWith('/api/')
-    ? `https://edith.xiaohongshu.com${endpoint.path}`
-    : `${XHS_API_BASE}${endpoint.path}`;
+  const fullUrl = `${XHS_API_BASE}${endpoint.path}`;
 
   const headers = { 'Content-Type': 'application/json' };
   if (accessToken) {
+    // 聚光 API 使用 Access-Token header（不是 Authorization: Bearer）
     headers['Access-Token'] = accessToken;
   }
 
@@ -369,7 +371,7 @@ async function xhsFetch(env, endpointName, body, accessToken) {
   }
 
   try {
-    const res = await fetch(fullPath, fetchOpts);
+    const res = await fetch(fullUrl, fetchOpts);
     const data = await res.json();
 
     // 聚光 API 统一返回格式: { code: 0, msg: "success", data: {...} }
@@ -403,7 +405,7 @@ async function getValidToken(userId, env) {
   // 快过期了，自动刷新
   if (row.refresh_token) {
     try {
-      const tokenRes = await xhsFetch(env, 'oauth.refresh', {
+      const tokenRes = await xhsFetch('oauth.refresh', {
         app_id: parseInt(env.XHS_APP_ID),
         secret: env.XHS_SECRET,
         refresh_token: row.refresh_token,
@@ -427,7 +429,6 @@ async function getValidToken(userId, env) {
     }
   }
 
-  // 过期了但没 refresh_token，返回旧 token（让调用方看到 401 错误）
   return row.access_token;
 }
 
